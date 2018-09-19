@@ -158,7 +158,7 @@ class SendMessageService: MixinService {
                 return
             }
 
-            let jobs = messageIds.flatMap { (messageId) -> Job in
+            let jobs = messageIds.compactMap { (messageId) -> Job in
                 let blazeMessage = BlazeMessage(ackBlazeMessage: messageId, status: MessageStatus.READ.rawValue)
                 return Job(jobId: blazeMessage.id, action: .SEND_ACK_MESSAGE, blazeMessage: blazeMessage)
             }
@@ -217,7 +217,7 @@ class SendMessageService: MixinService {
 
                 if job.action == JobAction.SEND_ACK_MESSAGE.rawValue || job.action == JobAction.SEND_DELIVERED_ACK_MESSAGE.rawValue {
                     let jobs = JobDAO.shared.nextBatchAckJobs(limit: 100)
-                    let messages: [TransferMessage] = jobs.flatMap {
+                    let messages: [TransferMessage] = jobs.compactMap {
                         guard let params = $0.toBlazeMessage().params, let messageId = params.messageId, let status = params.status else {
                             return nil
                         }
@@ -228,7 +228,7 @@ class SendMessageService: MixinService {
                         return
                     }
                     
-                    JobDAO.shared.removeJobs(jobIds: jobs.flatMap { $0.jobId })
+                    JobDAO.shared.removeJobs(jobIds: jobs.compactMap { $0.jobId })
                 } else {
                     guard SendMessageService.shared.handlerJob(job: job) else {
                         return
